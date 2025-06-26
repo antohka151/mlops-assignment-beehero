@@ -1,7 +1,7 @@
 .PHONY: install test train lint serve serve-dev
 
 install:
-	uv pip install -e ".[dev]"
+	uv sync
 
 test:
 	uv run python -m pytest

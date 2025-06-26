@@ -118,3 +118,22 @@ Example response:
 - **FastAPI service**: REST API for predictions.
 - **Extensible**: Add new preprocessing steps, models, or data sources with minimal code changes.
 - **Testing**: Unit tests for all major components.
+
+---
+
+## Further Improvements
+
+- **Optimize Outlier Handling**  
+  Re-evaluate the current outlier removal strategy.
+
+- **Standardize MLflow Integration**  
+  Improve consistency in MLflow logging across training and evaluation stages. Define a unified schema for parameters, metrics, and artifacts to streamline experiment tracking and model comparison. Potentially encapsulate some of the behavior.
+
+- **Collaborate with  Data Science Team**  
+  Engage with the DS team to align on feature engineering, model selection, and evaluation metrics. Incorporate feedback to ensure the pipeline meets real-world requirements. Consider moving components to a separate library.
+
+- **Improve Documentation**  
+  Add component-level documentation, usage examples, and developer onboarding guides to facilitate collaboration and maintenance.
+
+- **Configure and test proper CI/CD Integration**
+  
