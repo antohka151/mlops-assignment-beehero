@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Training pipeline entry point for the Colony Strength Classifier.
 This script orchestrates the entire training process from data loading to model evaluation.
@@ -18,7 +17,6 @@ from src.utils.logger import get_logger
 logger = get_logger(__name__)
 
 def parse_args():
-    # ... (no changes needed here)
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(description="Train Colony Strength Classifier")
     parser.add_argument(

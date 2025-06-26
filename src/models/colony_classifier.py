@@ -1,5 +1,3 @@
-# src/models/colony_classifier.py
-
 from typing import Dict, Any
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.utils.validation import check_is_fitted

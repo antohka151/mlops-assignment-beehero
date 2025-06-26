@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 API server entry point for the Colony Strength Classifier.
 This script starts the FastAPI server to serve model predictions.

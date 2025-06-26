@@ -1,5 +1,3 @@
-# src/models/pyfunc_wrapper.py
-
 import mlflow
 import pandas as pd
 from sklearn.pipeline import Pipeline

@@ -1,16 +1,8 @@
-# src/evaluator.py
-# No changes needed. It correctly accepts a pyfunc_model and raw test data.
 from typing import Dict, Any, List
 import pandas as pd
-from sklearn.metrics import accuracy_score, f1_score, confusion_matrix
+from sklearn.metrics import accuracy_score, f1_score
 from src.models.pyfunc_wrapper import FullPipelinePyFunc
 
-# src/evaluator.py
-
-from typing import Dict, Any, List
-import pandas as pd
-from sklearn.metrics import accuracy_score, f1_score, confusion_matrix
-from src.models.pyfunc_wrapper import FullPipelinePyFunc
 
 def evaluate_model(
     model: FullPipelinePyFunc,
