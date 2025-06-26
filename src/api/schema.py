@@ -2,7 +2,7 @@
 """
 Defines request and response schemas for the API.
 """
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Dict, List, Optional, Any
 import pandas as pd
 
@@ -19,20 +19,19 @@ class PredictionRequest(BaseModel):
         description="List of records to predict"
     )
 
-    class Config:
-        schema_extra = {
-            "example": {
-                "instances": [
-                    {
-                        "temperature": 24.5,
-                        "humidity": 65.0,
-                        "light_intensity": 800,
-                        "vibration": 0.015,
-                        "sound_frequency": 250
-                    }
-                ]
-            }
+    model_config = ConfigDict(json_schema_extra={
+        "example": {
+            "instances": [
+                {
+                    "temperature": 24.5,
+                    "humidity": 65.0,
+                    "light_intensity": 800,
+                    "vibration": 0.015,
+                    "sound_frequency": 250
+                }
+            ]
         }
+    })
 
     def to_dataframe(self) -> pd.DataFrame:
         """Converts the request data to a pandas DataFrame for model input."""
@@ -55,10 +54,9 @@ class PredictionResponse(BaseModel):
         description="Record identifiers from the original input, preserving order"
     )
     
-    class Config:
-        schema_extra = {
-            "example": {
-                "predictions": ["Strong"],
-                "record_ids": [0]
-            }
+    model_config = ConfigDict(json_schema_extra={
+        "example": {
+            "predictions": ["Strong"],
+            "record_ids": [0]
         }
+    })
