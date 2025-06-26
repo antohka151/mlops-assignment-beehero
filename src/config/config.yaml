@@ -1,0 +1,164 @@
+# ===================================================================
+# ML Pipeline Configuration for Bee Colony Strength Prediction
+# ===================================================================
+# This file defines all stages of the ML pipeline, translating the logic
+# from the legacy script into a declarative and modular format.
+
+# --- Data Loading Configuration ---
+# Specifies where to find the raw data. Corresponds to DataLoaderConfig.
+data_loader:
+  type: "csv"
+  # Path extracted from the DATA_PATH global variable in the legacy code.
+  path: "resources/colony_size.csv"
+
+# --- Pre-training Data Cleaning ---
+# Applies static filtering rules before any feature engineering.
+# This corresponds to the OutlierRemoverConfig schema.
+outlier_remover:
+  group_by_column: "sensor_id"
+  temperature_column: "temperature_sensor"
+  max_temp_threshold: 50
+  min_temp_threshold: 10
+
+# --- Data Preprocessing Configuration ---
+# A sequence of transformation steps to generate features from raw data.
+# Each item corresponds to a PreprocessorStepConfig.
+data_preprocessor:
+  # Step 0: Convert integer columns to float for compatibility.
+  # This is necessary because if nan values are present during inference,
+  # integer columns will be converted to float automatically.
+  - name: ConvertIntColumnsToFloat
+    class_path: feature_store.IntToFloatConverter
+    params: {} # no parameters means it applies to all integer columns
+
+  # Step 1: Impute missing temperature values using the mean.
+  - name: ImputeTemperatures
+    class_path: feature_store.MeanImputer
+    params:
+      input_cols: ["temperature_sensor", "temperature_gateway"]
+
+  # Step 2: Calculate temperature statistics grouped by sensor.
+  - name: AggregateTemperatureStats
+    class_path: feature_store.GroupedAggregator
+    params:
+      input_cols: ["temperature_sensor", "temperature_gateway"]
+      groupby_col: "sensor_id"
+      aggregations:
+        temperature_sensor: ["mean", "std", "min", "max"]
+        temperature_gateway: ["mean", "std", "min", "max"]
+      output_cols:
+        - "temperature_sensor_mean"
+        - "temperature_sensor_std"
+        - "temperature_sensor_min"
+        - "temperature_sensor_max"
+        - "temperature_gateway_mean"
+        - "temperature_gateway_std"
+        - "temperature_gateway_min"
+        - "temperature_gateway_max"
+
+  # Step 3: Create temperature range feature for the main sensor.
+  - name: CreateSensorTempRange
+    class_path: feature_store.ColumnSubtractor
+    params:
+      input_cols: ["temperature_sensor_max", "temperature_sensor_min"]
+      output_col: "sensor_temp_range"
+      col_a: "temperature_sensor_max"
+      col_b: "temperature_sensor_min"
+
+  # Step 4: Create temperature range feature for the gateway.
+  - name: CreateGatewayTempRange
+    class_path: feature_store.ColumnSubtractor
+    params:
+      input_cols: ["temperature_gateway_max", "temperature_gateway_min"]
+      output_col: "gateway_temp_range"
+      col_a: "temperature_gateway_max"
+      col_b: "temperature_gateway_min"
+
+  # Step 5: Create a binary flag for high transmission strength.
+  - name: FlagHighTransmission
+    class_path: feature_store.ThresholdBinarizer
+    params:
+      input_col: "ihs_to_gw_transmission_strength"
+      output_col: "high_transmission"
+      threshold: 10
+
+  # Step 6: Calculate transmission strength statistics grouped by sensor.
+  - name: AggregateTransmissionStats
+    class_path: feature_store.GroupedAggregator
+    params:
+      input_cols: ["ihs_to_gw_transmission_strength"]
+      groupby_col: "sensor_id"
+      aggregations:
+        ihs_to_gw_transmission_strength: ["mean", "std"]
+      output_cols:
+        - "ihs_to_gw_transmission_strength_mean"
+        - "ihs_to_gw_transmission_strength_std"
+
+  # Step 7: Calculate the deviation from the mean transmission strength.
+  - name: CreateTransmissionDeviation
+    class_path: feature_store.AbsoluteDifference
+    params:
+      input_cols: ["ihs_to_gw_transmission_strength", "ihs_to_gw_transmission_strength_mean"]
+      output_col: "transmission_deviation"
+      col_a: "ihs_to_gw_transmission_strength"
+      col_b: "ihs_to_gw_transmission_strength_mean"
+
+# --- Model Configuration ---
+# Defines the algorithm and its hyperparameters. Corresponds to ColonyStrengthClassifierConfig.
+model:
+  # Extracted from `model = RandomForestClassifier(...)`
+  model_class_path: "sklearn.ensemble.RandomForestClassifier"
+  # All hyperparameters are taken directly from the legacy code.
+  hyperparameters:
+    n_estimators: 100
+    max_depth: 15
+    min_samples_split: 5
+    min_samples_leaf: 2
+    random_state: 42
+    n_jobs: -1
+
+# --- Training Configuration ---
+# Defines how the model is trained and the data is split. Corresponds to TrainingConfig.
+training:
+  # The target variable, from `y = data["size"]`.
+  target_column: "size"
+  # The list of features to use, from the `FEATURES` global variable.
+  feature_columns:
+    - "temperature_sensor_mean"
+    - "temperature_gateway_mean"
+    - "temperature_sensor_std"
+    - "temperature_gateway_std"
+    - "sensor_temp_range"
+    - "gateway_temp_range"
+    - "ihs_to_gw_transmission_strength_mean"
+    - "ihs_to_gw_transmission_strength_std"
+    - "high_transmission"
+    - "transmission_deviation"
+  # From `train_test_split(..., test_size=0.2, random_state=42)`.
+  test_size: 0.2
+  random_state: 42
+  # The legacy code comment explicitly mentions "(no stratification)",
+  # so we override the schema's default of `true`.
+  stratify: false
+
+# --- Evaluation Configuration ---
+# Defines which metrics to calculate. Corresponds to EvaluationConfig.
+evaluation:
+  # The legacy code only computed accuracy. We use a more robust set of metrics
+  # suitable for classification, as defined in the schema.
+  metrics:
+    - "accuracy"
+    - "f1_macro"
+    - "precision_macro"
+    - "recall_macro"
+
+# --- MLflow Tracking Configuration ---
+# Replaces the crude `save_model` function with a proper experiment tracker.
+mlflow:
+  # Using an environment variable for the tracking URI is a best practice.
+  # The config loader will fall back to a local path if the env var is not set.
+  tracking_uri: "${MLFLOW_TRACKING_URI:-file:///tmp/mlruns}"
+  experiment_name: "Bee-Colony-Strength-Prediction"
+  # The {timestamp} placeholder can be resolved at runtime for unique run names.
+  run_name: "rfc_run_{timestamp}"
+  registered_model_name: "colony-strength-classifier"
