@@ -9,10 +9,9 @@ A modular, production-ready machine learning pipeline for classifying bee colony
 ## Project Structure
 
 ```
-mlops-assignment-refactored/
+mlops-assignment-beehero/
 ├── Makefile                # Automation for common tasks
 ├── pyproject.toml          # Project metadata and dependencies
-├── requirements.txt        # (legacy) Dependency list
 ├── train_pipeline.py       # Main entry point for training pipeline
 ├── serve_api.py            # FastAPI server entry point
 ├── Dockerfile              # Containerization
@@ -135,5 +134,4 @@ Example response:
 - **Improve Documentation**  
   Add component-level documentation, usage examples, and developer onboarding guides to facilitate collaboration and maintenance.
 
-- **Configure and test proper CI/CD Integration**
-  
+- **Improve CI/CD Integration**
